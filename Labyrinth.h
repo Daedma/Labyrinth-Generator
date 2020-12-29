@@ -7,7 +7,7 @@
 
 #define BLOCK char(219)
 #define STEP 2
-#define STATUS_CUP 4
+#define STATUS_CUP 10
 #define Y_LIMIT 1
 
 enum class Exist
@@ -31,7 +31,7 @@ class Labyrinth
 			}
 			os << std::endl;
 		}
-		std::cout << std::endl;
+		std::cout << std::endl << "Exit the labyrinth\n";
 		for (const auto& y : lab.escape)
 		{
 			for (const auto& x : y)
@@ -95,7 +95,7 @@ private:
 		std::bernoulli_distribution ber(branch_param.branch_rate / 1000.);
 		for (auto& i : escape_map)
 		{
-			if (i.second % 2 == 0 && ber(e))
+			if (i.second % 2 == 0 && i.first % 2 == 0 && ber(e))
 				subpath(i.second, i.first, branch_param.max_branch);
 		}
 	}
@@ -105,7 +105,7 @@ private:
 		std::uniform_int_distribution<> d(-1, 1);
 		std::bernoulli_distribution ber(branch_param.branch_rate/1000.);
 		uint8_t counter = 0;
-		static uint8_t status = 0;
+		uint8_t status = 0;
 		bool flag = true;
 			while (counter != branch_param.max_size && flag)
 			{
@@ -133,12 +133,13 @@ private:
 					++status;
 					if (status == STATUS_CUP) flag = false;
 				}
-				if (ber(e) && re_count && flag)
+				if (ber(e) && re_count && !status && y % 2 == 0 && x % 2 == 0)
 				{
 					subpath(x, y, re_count - 1);
 				}
 			}
-		status = 0;
+		//status = 0;
+		//counter = 0;
 	}
 	bool hor_check(size_t indx, size_t indy, short course = 1) const
 	{
