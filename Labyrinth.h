@@ -4,21 +4,45 @@
 #include <random>
 #include <map>
 #include <ctime>
+#include <algorithm>
+#include <cmath>
 
-#define BLOCK char(219)
-#define STEP 2
-#define STATUS_CUP 10
+#define BLOCK char(219)//aggregate for print walls of labyrinth
+#ifndef STATUS_CUP
+	#define STATUS_CUP 10 
+/*Maximum amount of fails when generating subbranches
+ *Recommended values STATUS_CUP >= 4
+ *Affects the speed of construction
+ */
+#endif // !STATUS_CUP
+
+#ifndef COEFFICIENT
+	#define COEFFICIENT 0.25
+/*As you increase, the curvature of the exit path decreases.
+ *When decreasing, it increases.
+ *Increase if there are problems with build time.
+ */
+#endif // !COEFFICIENT
+
+//Service
+//Don't change this
 #define Y_LIMIT 1
+#define STEP 2//step
 
-enum class Exist
+/*
+* VERTICAL - means building a labyrinth with exits on the sides
+* HORIZONTAL - means building a labyrinth with exits from above and below
+*/
+enum class Exist//parameters to pass to constructor and function regeneration
 {
 	VERTICAL, HORIZONTAL
 };
 
+//Class for random generation of labyrinth
 template <unsigned W, unsigned H>//width and height
 class Labyrinth
 {
-	friend std::ostream& operator<<(std::ostream& os, const Labyrinth<W, H>& lab)
+	friend std::ostream& operator<<(std::ostream& os, const Labyrinth<W, H>& lab)//use const _PRINT_WITHOUT_EXIT_ , if you want print labyrinth without exit path
 	{
 		for (const auto& y : lab.bBody)
 		{
@@ -31,6 +55,7 @@ class Labyrinth
 			}
 			os << std::endl;
 		}
+#ifndef _PRINT_WITHOUT_EXIT_
 		std::cout << std::endl << "Exit the labyrinth\n";
 		for (const auto& y : lab.escape)
 		{
@@ -43,6 +68,7 @@ class Labyrinth
 			}
 			os << std::endl;
 		}
+#endif // !_PRINT_WITHOUT_EXIT_
 		return os;
 	}
 	template<unsigned Width, unsigned Height, typename T>
@@ -62,7 +88,7 @@ public:
 		build_path(ex);
 		build_subpath();
 	}
-	void regenerate(Exist ex = Exist::VERTICAL);//generation new labyrinth
+	void regenerate(Exist ex = Exist::VERTICAL);//generation new labyrinth with old pamametrs
 	const auto& get() const //returns an object in a bool array performance
 	{
 		return bBody;
@@ -107,39 +133,38 @@ private:
 		uint8_t counter = 0;
 		uint8_t status = 0;
 		bool flag = true;
-			while (counter != branch_param.max_size && flag)
+		int dx = d(e), dy = d(e);
+		while (counter != branch_param.max_size && flag)
+		{
+			++counter;
+			dx = d(e), dy = d(e);
+			if (dx && x + dx * STEP < W / 2 * 2 - 3 && x + dx * STEP > 3 && bBody[y][x + dx * STEP] && bBody[y - 1][x + dx * STEP] && bBody[y + 1][x + dx * STEP] && bBody[y][x + dx * (STEP + 1)] && bBody[y][x + dx])
 			{
-				++counter;
-				int dx = d(e), dy = d(e);
-				if (dx && x + dx * STEP < W / 2 * 2 - 3 && x + dx * STEP > 3 && bBody[y][x + dx * STEP] && bBody[y - 1][x + dx * STEP] && bBody[y + 1][x + dx * STEP] && bBody[y][x + dx * (STEP + 1)] && bBody[y][x + dx])
-				{
-					x += dx * STEP;
-					status = 0;
-					bBody[y][x - dx] = bBody[y][x] = false;
-				}
-				else if(dx)
-				{
-					++status;
-					if (status == STATUS_CUP) flag = false;
-				}
-				if (dy && y + dy * STEP > Y_LIMIT && y + dy * STEP < H / 2 * 2 - 2 && bBody[dy * STEP + y][x] && bBody[y + dy * STEP][x + 1] && bBody[y + dy * STEP][x - 1] && bBody[y + dy * (STEP + 1)][x] && bBody[y + dy][x])
-				{
-					y += dy * STEP;
-					status = 0;
-					bBody[y - dy][x] = bBody[y][x] = false;
-				}
-				else if(dy)
-				{
-					++status;
-					if (status == STATUS_CUP) flag = false;
-				}
-				if (ber(e) && re_count && !status && y % 2 == 0 && x % 2 == 0)
-				{
-					subpath(x, y, re_count - 1);
-				}
+				x += dx * STEP;
+				status = 0;
+				bBody[y][x - dx] = bBody[y][x] = false;
 			}
-		//status = 0;
-		//counter = 0;
+			else if (dx)
+			{
+				++status;
+				if (status == STATUS_CUP) flag = false;
+			}
+			if (dy && y + dy * STEP > Y_LIMIT && y + dy * STEP < H / 2 * 2 - 2 && bBody[dy * STEP + y][x] && bBody[y + dy * STEP][x + 1] && bBody[y + dy * STEP][x - 1] && bBody[y + dy * (STEP + 1)][x] && bBody[y + dy][x])
+			{
+				y += dy * STEP;
+				status = 0;
+				bBody[y - dy][x] = bBody[y][x] = false;
+			}
+			else if (dy)
+			{
+				++status;
+				if (status == STATUS_CUP) flag = false;
+			}
+			if (ber(e) && re_count && !status && y % 2 == 0 && x % 2 == 0)
+			{
+				subpath(x, y, re_count - 1);
+			}
+		}
 	}
 	bool hor_check(size_t indx, size_t indy, short course = 1) const
 	{
@@ -174,15 +199,15 @@ void Labyrinth<W, H>::build_frames()
 template <unsigned W, unsigned H>
 void Labyrinth<W, H>::build_path(Exist ex)
 {
-	static std::default_random_engine e(static_cast<size_t>(time(0)));
+	static std::default_random_engine e(static_cast<unsigned>(time(0)));
 	if (ex == Exist::HORIZONTAL)
 	{
 		std::uniform_int_distribution<> dy(-1, 1);
 		std::bernoulli_distribution dx(0.9);
-		std::bernoulli_distribution ch(0.5);
+		std::bernoulli_distribution ch(std::clamp(1.56 - pow(static_cast<double>(H) / W, COEFFICIENT), 0.1, 1.));
 		size_t counter = 0;
 		bool flag = true;
-		size_t bx = 0, by = H / 2;
+		size_t bx = 0, by = (!((H / 2) % 2)) ? H / 2 : H / 2 + 1;
 		while (flag) 
 		{
 			bx = 0;
@@ -190,7 +215,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 			escape[by][bx + 1] = bBody[by][bx + 1] = escape[by][bx] = bBody[by][bx] =
 				escape[by][bx + 2] = bBody[by][bx + 2] = false;
 			bx += 2;
-			while (bx < W / 2 * 2 - 2 && counter != W + H  )
+			while (bx < W / 2 * 2 - 2 && counter != W * H  )
 			{
 				++counter;
 				bool status = dx(e);
@@ -240,7 +265,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 				{
 					by += ny * STEP;
 					escape[by - ny][bx] = bBody[by - ny][bx] = escape[by][bx] = bBody[by][bx] = false;
-					if (dx(e) && by + ny * STEP > 2 && by + ny * STEP < H / 2 * 2 - 2 && escape[by + ny * STEP][bx] &&
+					if (!ch(e) && by + ny * STEP > 2 && by + ny * STEP < H / 2 * 2 - 2 && escape[by + ny * STEP][bx] &&
 						escape[by + ny * (STEP + 1)][bx] && !hor_check(bx, by + ny * STEP))
 					{
 						by += ny * STEP;
@@ -255,7 +280,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 					{
 						by += ny * STEP;
 						escape[by - ny][bx] = bBody[by - ny][bx] = escape[by][bx] = bBody[by][bx] = false;
-						if (dx(e) && by + ny * STEP > 2 && by + ny * STEP < H / 2 * 2 - 2 && escape[by + ny * STEP][bx] &&
+						if (!ch(e) && by + ny * STEP > 2 && by + ny * STEP < H / 2 * 2 - 2 && escape[by + ny * STEP][bx] &&
 							escape[by + ny * (STEP + 1)][bx] && !hor_check(bx, by + ny * STEP))
 						{
 							by += ny * STEP;
@@ -264,7 +289,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 					}
 				}
 			}
-			if (counter != W + H)
+			if (counter != W * H)
 			{
 				init_map();
 				flag = false;
@@ -280,11 +305,11 @@ void Labyrinth<W, H>::build_path(Exist ex)
 	else
 	{
 		std::uniform_int_distribution<> dy(-1, 1);
-		std::bernoulli_distribution dx(0.6);
-		std::bernoulli_distribution ch(0.4);
+		std::bernoulli_distribution dx(0.9);
+		std::bernoulli_distribution ch(std::clamp(1.56 - pow(static_cast<double>(W) / H, COEFFICIENT), 0.1, 1.));
 		size_t counter = 0;
 		bool flag = true;
-		size_t bx = W/2, by = 0;
+		size_t bx = (!((W / 2) % 2)) ? W / 2 : W / 2 + 1, by = 0;
 		while (flag)
 		{
 			bx = W/2;
@@ -292,7 +317,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 			escape[by + 1][bx] = bBody[by + 1][bx] = escape[by][bx] = bBody[by][bx] =
 				escape[by + 2][bx] = bBody[by + 2][bx] = false;
 			by += 2;
-			while (by < H / 2 * 2 - 2 && counter != W + H)
+			while (by < H / 2 * 2 - 2 && counter != W * H)
 			{
 				++counter;
 				bool status = dx(e);
@@ -337,7 +362,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 				{
 					bx += nx * STEP;
 					escape[by][bx - nx] = bBody[by][bx - nx] = escape[by][bx] = bBody[by][bx] = false;
-					if (dx(e) && bx + nx * STEP > 2 && bx + nx * STEP < W / 2 * 2 - 3 && escape[by][bx + nx * STEP] &&
+					if (!ch(e) && bx + nx * STEP > 2 && bx + nx * STEP < W / 2 * 2 - 3 && escape[by][bx + nx * STEP] &&
 						escape[by][bx + nx * (STEP + 1)] && !ver_check(bx + nx * STEP, by))
 					{
 						bx += nx * STEP;
@@ -352,7 +377,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 					{
 						bx += nx * STEP;
 						escape[by][bx - nx] = bBody[by][bx - nx] = escape[by][bx] = bBody[by][bx] = false;
-						if (dx(e) && bx + nx * STEP > 2 && bx + nx * STEP < W / 2 * 2 - 3 && escape[by][bx + nx * STEP] &&
+						if (!ch(e) && bx + nx * STEP > 2 && bx + nx * STEP < W / 2 * 2 - 3 && escape[by][bx + nx * STEP] &&
 							escape[by][bx + nx * (STEP + 1)] && !ver_check(bx + nx * STEP, by))
 						{
 							bx += nx * STEP;
@@ -361,7 +386,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 					}
 				}
 			}
-			if (counter != W + H)
+			if (counter != W * H)
 			{
 				init_map();
 				flag = false;
