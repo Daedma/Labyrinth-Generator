@@ -17,7 +17,7 @@
 
 #define BLOCK char(219)//aggregate for print walls of labyrinth
 #ifndef STATUS_CUP
-	#define STATUS_CUP 5 
+#define STATUS_CUP 5 
 /*Maximum amount of fails when generating subbranches
  *Recommended values STATUS_CUP >= 4
  *Affects the speed of construction
@@ -25,15 +25,15 @@
 #endif // !STATUS_CUP
 
 #ifndef COEFFICIENT
-	#define COEFFICIENT 0.25
-/*As you increase, the curvature of the exit path decreases.
- *When decreasing, it increases.
- *Increase if there are problems with build time.
- */
+#define COEFFICIENT 0.25
+ /*As you increase, the curvature of the exit path decreases.
+  *When decreasing, it increases.
+  *Increase if there are problems with build time.
+  */
 #endif // !COEFFICIENT
 
-//Service
-//Don't change this
+  //Service
+  //Don't change this
 #define Y_LIMIT 1
 #define STEP 2//step
 
@@ -91,15 +91,16 @@ class Labyrinth
 	}
 	template<unsigned Width, unsigned Height, typename T>
 	using _2dArray = std::array<std::array<T, Height>, Width>;
-	struct Params{
+	struct Params
+	{
 		size_t max_branch, branch_rate, max_size;
 	} branch_param;//parameter pack
-	_2dArray<H/2*2, W/2*2, bool> bBody;//main parameter
-	_2dArray<H/2*2, W/2*2, bool> escape;
+	_2dArray<H / 2 * 2, W / 2 * 2, bool> bBody;//main parameter
+	_2dArray<H / 2 * 2, W / 2 * 2, bool> escape;
 	std::multimap<size_t, size_t> escape_map;
-public:
+	public:
 	Labyrinth(Exist ex = Exist::HORIZONTAL, size_t max_branch = 100, size_t branch_rate = 1000, size_t branch_size = 50) ://standart constructor
-		branch_param{ max_branch, branch_rate, branch_size }
+		branch_param { max_branch, branch_rate, branch_size }
 	{
 		build_frames();
 		build_path(ex);
@@ -109,7 +110,7 @@ public:
 	const auto& get() const //returns an object in a bool array performance
 	{
 		return bBody;
-	} 
+	}
 	const auto& path() const //return exit path in a bool array performance
 	{
 		return escape;
@@ -122,7 +123,7 @@ public:
 	{
 		return bBody[Y][X];
 	}
-private:
+	private:
 	void build_path(Exist);
 	void build_frames();
 	void init_map()
@@ -136,10 +137,10 @@ private:
 	{
 		static std::default_random_engine e(static_cast<unsigned>(time(0)));
 		std::bernoulli_distribution ber(branch_param.branch_rate / 1000.);
-		std::vector<std::multimap<size_t, size_t>::value_type> sample_map{ (H * W) / (H + W) };
-		std::sample(escape_map.cbegin(), escape_map.cend(), std::back_inserter(sample_map), (H * W) / (H + W), std::mt19937(std::random_device{}()));
+		std::vector<std::multimap<size_t, size_t>::value_type> sample_map {};
+		std::sample(escape_map.cbegin(), escape_map.cend(), std::back_inserter(sample_map), (H * W) / (H + W), std::mt19937(std::random_device {}()));
 #ifndef _FAST_BUILD_
-		std::vector<std::pair<size_t, size_t>> ends{ (H * W) / (H + W) };
+		std::vector<std::pair<size_t, size_t>> ends {};
 #endif // !_FAST_BUILD_
 		//step 1
 		for (auto& i : sample_map)
@@ -156,7 +157,7 @@ private:
 		}
 		//step 2
 #ifndef _FAST_BUILD_
-		std::shuffle(ends.begin(), ends.end(), std::mt19937(std::random_device{}()));
+		std::shuffle(ends.begin(), ends.end(), std::mt19937(std::random_device {}()));
 		for (const auto& [x, y] : ends)
 		{
 			subpath(x, y, branch_param.max_branch);
@@ -194,19 +195,19 @@ private:
 		int proc, delta;
 		if (ex == Exist::HORIZONTAL)
 		{
-			d_x.param(std::uniform_int_distribution<>::param_type{ -1,1 });
+			d_x.param(std::uniform_int_distribution<>::param_type { -1, 1 });
 			if (d(e))
-				d_y.param(std::uniform_int_distribution<>::param_type{ 0,1 });
+				d_y.param(std::uniform_int_distribution<>::param_type { 0, 1 });
 			else
-				d_y.param(std::uniform_int_distribution<>::param_type{ -1,0 });
+				d_y.param(std::uniform_int_distribution<>::param_type { -1, 0 });
 		}
 		else
 		{
-			d_y.param(std::uniform_int_distribution<>::param_type{ -1,1 });
+			d_y.param(std::uniform_int_distribution<>::param_type { -1, 1 });
 			if (d(e))
-				d_x.param(std::uniform_int_distribution<>::param_type{ 0,1 });
+				d_x.param(std::uniform_int_distribution<>::param_type { 0, 1 });
 			else
-				d_x.param(std::uniform_int_distribution<>::param_type{ -1,0 });
+				d_x.param(std::uniform_int_distribution<>::param_type { -1, 0 });
 		}
 		while (counter < branch_param.max_size && flag)
 		{
@@ -243,7 +244,7 @@ private:
 	{
 		static std::default_random_engine e(static_cast<unsigned>(time(0)));
 		std::uniform_int_distribution<> d(-1, 1);
-		std::bernoulli_distribution ber(branch_param.branch_rate/1000.);
+		std::bernoulli_distribution ber(branch_param.branch_rate / 1000.);
 		uint8_t counter = 0;
 		uint8_t status = 0;
 		bool flag = true;
@@ -323,13 +324,13 @@ void Labyrinth<W, H>::build_path(Exist ex)
 	if (ex == Exist::HORIZONTAL)
 	{
 		std::bernoulli_distribution cf(std::clamp(1.56 - pow(static_cast<double>(H) / W, COEFFICIENT), 0.1, 1.));//cf - curvature factor
-		while (flag) 
+		while (flag)
 		{
 			x = 0, y = ((H / 2) % 2) ? H / 2 + 1 : H / 2;
 			escape[y][x + 1] = bBody[y][x + 1] = escape[y][x] = bBody[y][x] =
 				escape[y][x + 2] = bBody[y][x + 2] = false;
 			x += 2;
-			while (x < W / 2 * 2 - 2 && counter != W * H  )
+			while (x < W / 2 * 2 - 2 && counter != W * H)
 			{
 				++counter;
 				status = proc(e);
@@ -449,7 +450,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 				else if (dy)
 				{
 					dy = -dy;
-					if (y + dy * 2 > 1 && y + dy * 2 < H / 2 * 2  &&
+					if (y + dy * 2 > 1 && y + dy * 2 < H / 2 * 2 &&
 						escape[y + dy * 2][x] && escape[y + dy * 2][x - 1] && escape[y + dy * 2][x + 1])
 					{
 						y += dy * 2;
