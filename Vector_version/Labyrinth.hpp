@@ -49,13 +49,13 @@ class Labyrinth//Class for random generation of labyrinth
     {
         size_t max_branch, branch_rate, max_size;
     } branch_param;//parameter pack
-    _2dArray<bool> bBody;//main parameter
-    _2dArray<bool> escape;
+    _2dArray<bool> bBody;//main parameter describing the labyrinth
+    _2dArray<bool> escape;//exit map in a bool array perfomance
     size_t width, height;
-    std::multimap<size_t, size_t> escape_map;
-    public:
+public:
     Labyrinth(size_t = 100, size_t = 100, Exist = Exist::HORIZONTAL, size_t = 100, size_t = 1000, size_t = 50);
     void regenerate(Exist ex = Exist::VERTICAL);//generation new labyrinth with old pamametrs
+    void regenerate(Exist, size_t, size_t, size_t = 100, size_t = 1000, size_t = 50);
     const auto& get() const //returns an object in a std::vector<bool> performance
     {
         return bBody;
@@ -72,10 +72,10 @@ class Labyrinth//Class for random generation of labyrinth
     {
         return bBody.at(Y).at(X);
     }
-    private:
+private:
     void build_path(Exist);
     void build_frames();
-    void init_map();
+    std::multimap<size_t, size_t> init_map();
     void build_subpath(Exist);
     std::pair<size_t, size_t> subpath(size_t, size_t, Exist);//for step 1
     void subpath(size_t, size_t, size_t);

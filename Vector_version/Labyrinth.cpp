@@ -48,16 +48,19 @@ Labyrinth::Labyrinth(size_t _width, size_t _height, Exist ex, size_t max_branch,
     build_subpath(ex);
 }
 
-void Labyrinth::init_map()
+std::multimap<size_t, size_t> Labyrinth::init_map()
 {
+    std::multimap<size_t, size_t> escape_map;
     for (size_t y = 2; y != height - 2; ++y)
         for (size_t x = 2; x != width - 2; ++x)
             if (!escape[y][x])
                 escape_map.insert(std::pair<const size_t, size_t>{y, x});
+    return escape_map;
 }
 
 void Labyrinth::build_subpath(Exist ex)
 {
+    std::multimap<size_t, size_t> escape_map = init_map();
     static std::default_random_engine e(static_cast<unsigned>(time(0)));
     std::bernoulli_distribution ber(branch_param.branch_rate / 1000.);
     std::vector<std::multimap<size_t, size_t>::value_type> sample_map {};
@@ -74,7 +77,7 @@ void Labyrinth::build_subpath(Exist ex)
             subpath(i.second, i.first, 0, sqrt(branch_param.max_size));
 #endif // _FAST_BUILD_
 #ifndef _FAST_BUILD_
-            ends.push_back(subpath(i.second, i.first, ex));
+            ends.emplace_back(subpath(i.second, i.first, ex));
 #endif // !_FAST_BUILD_
         }
     }
@@ -435,6 +438,18 @@ void Labyrinth::build_path(Exist ex)
 
 void Labyrinth::regenerate(Exist ex)
 {
+    build_frames();
+    build_path(ex);
+    build_subpath(ex);
+}
+
+void Labyrinth::regenerate(Exist ex, size_t _width, size_t _height, size_t max_branch, size_t branch_rate, size_t branch_size)
+{
+    width = _width;
+    height = _height;
+    branch_param.max_branch = max_branch;
+    branch_param.branch_rate = branch_rate;
+    branch_param.max_size = branch_size;
     build_frames();
     build_path(ex);
     build_subpath(ex);

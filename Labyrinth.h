@@ -1,6 +1,6 @@
 /*
 * Header containing Labyrinth generator
-* version 1.1.2
+* version 1.1.3
 * Author: Damir Hismatov
 * Github: https://github.com/Daedma
 */
@@ -51,53 +51,13 @@ enum class Exist//parameters to pass to constructor and function regeneration
 template <unsigned W, unsigned H>//width and height
 class Labyrinth
 {
-	/*
-	* y default displays Labyrinth and path separately
-	* use macros _PRINT_WITHOUT_EXIT_ , if you want print labyrinth without exit path separately
-	* use macros _PRINT_WITH_EXIT_ , if you want highlight exit inside labyrinth
-	*/
-	friend std::ostream& operator<<(std::ostream& os, const Labyrinth<W, H>& lab)
-	{
-		for (auto y = 0; y != lab.get().size(); ++y)
-		{
-			for (auto x = 0; x != lab.get()[y].size(); ++x)
-			{
-				if (lab.get()[y][x])
-					os << BLOCK;
-#ifdef _PRINT_WITH_EXIT_
-				else if (!(lab.path()[y][x]))
-					os << char(177);
-#endif // _PRINT_WITH_EXIT
-				else
-					os << ' ';
-			}
-			os << std::endl;
-		}
-#ifndef _PRINT_WITHOUT_EXIT_
-		std::cout << std::endl << "Exit the labyrinth\n";
-		for (const auto& y : lab.escape)
-		{
-			for (const auto& x : y)
-			{
-				if (x)
-					os << BLOCK;
-				else
-					os << ' ';
-			}
-			os << std::endl;
-		}
-#endif // !_PRINT_WITHOUT_EXIT_
-		return os;
-	}
 	template<unsigned Width, unsigned Height, typename T>
 	using _2dArray = std::array<std::array<T, Height>, Width>;
-	struct Params
-	{
+	struct Params{
 		size_t max_branch, branch_rate, max_size;
-	} branch_param;//parameter pack
-	_2dArray<H / 2 * 2, W / 2 * 2, bool> bBody;//main parameter
-	_2dArray<H / 2 * 2, W / 2 * 2, bool> escape;
-	std::multimap<size_t, size_t> escape_map;
+	} branch_param;//parameter pack of branches
+	_2dArray<H / 2 * 2, W / 2 * 2, bool> bBody;//main parameter describing the labyrinth
+	_2dArray<H / 2 * 2, W / 2 * 2, bool> escape;//exit map in a bool array perfomance
 	public:
 	Labyrinth(Exist ex = Exist::HORIZONTAL, size_t max_branch = 100, size_t branch_rate = 1000, size_t branch_size = 50) ://standart constructor
 		branch_param { max_branch, branch_rate, branch_size }
@@ -106,7 +66,16 @@ class Labyrinth
 		build_path(ex);
 		build_subpath(ex);
 	}
-	void regenerate(Exist ex = Exist::VERTICAL);//generation new labyrinth with old pamametrs
+	void regenerate(Exist ex = Exist::HORIZONTAL);//generation new labyrinth with old pamametrs
+	void regenerate(Exist ex, size_t max_branch, size_t branch_rate, size_t branch_size)
+	{
+		branch_param.max_branch = max_branch;
+		branch_param.branch_rate = branch_rate;
+		branch_param.max_size = branch_size;
+		build_frames();
+		build_path(ex);
+		build_subpath(ex);
+	}
 	const auto& get() const //returns an object in a bool array performance
 	{
 		return bBody;
@@ -115,26 +84,33 @@ class Labyrinth
 	{
 		return escape;
 	}
-	const bool& at(size_t X, size_t Y) const
+	const bool& at(size_t X, size_t Y) const &
 	{
 		return bBody[Y][X];
 	}
-	bool& at(size_t X, size_t Y)
+	bool& at(size_t X, size_t Y) &
+	{
+		return bBody[Y][X];
+	}
+	bool at(size_t X, size_t Y) &&
 	{
 		return bBody[Y][X];
 	}
 	private:
 	void build_path(Exist);
 	void build_frames();
-	void init_map()
+	auto init_map()
 	{
+		std::multimap<size_t, size_t> escape_map;
 		for (size_t y = 2; y != H / 2 * 2 - 2; ++y)
 			for (size_t x = 2; x != W / 2 * 2 - 2; ++x)
 				if (!escape[y][x])
 					escape_map.insert(std::pair<const size_t, size_t>{y, x});
+		return escape_map;
 	}
 	void build_subpath(Exist ex)
 	{
+		std::multimap<size_t, size_t> escape_map = init_map();
 		static std::default_random_engine e(static_cast<unsigned>(time(0)));
 		std::bernoulli_distribution ber(branch_param.branch_rate / 1000.);
 		std::vector<std::multimap<size_t, size_t>::value_type> sample_map {};
@@ -151,7 +127,7 @@ class Labyrinth
 				subpath(i.second, i.first, 0, sqrt(branch_param.max_size));
 #endif // _FAST_BUILD_
 #ifndef _FAST_BUILD_
-				ends.push_back(subpath(i.second, i.first, ex));
+				ends.emplace_back(subpath(i.second, i.first, ex));
 #endif // !_FAST_BUILD_
 			}
 		}
@@ -506,7 +482,6 @@ void Labyrinth<W, H>::build_path(Exist ex)
 		}
 		escape[y + 1][x] = bBody[y + 1][x] = false;
 	}
-	init_map();
 }
 
 template <unsigned W, unsigned H>
@@ -514,5 +489,45 @@ void Labyrinth<W, H>::regenerate(Exist ex)
 {
 	build_frames();
 	build_path(ex);
-	build_subpath();
+	build_subpath(ex);
+}
+
+/*
+* y default displays Labyrinth and path separately
+* use macros _PRINT_WITHOUT_EXIT_ , if you want print labyrinth without exit path separately
+* use macros _PRINT_WITH_EXIT_ , if you want highlight exit inside labyrinth
+*/
+template<unsigned W, unsigned H>
+std::ostream& operator<<(std::ostream& os, const Labyrinth<W, H>& lab)//print labyrinth
+{
+	for (auto y = 0; y != lab.get().size(); ++y)
+	{
+		for (auto x = 0; x != lab.get()[y].size(); ++x)
+		{
+			if (lab.get()[y][x])
+				os << BLOCK;
+#ifdef _PRINT_WITH_EXIT_
+			else if (!(lab.path()[y][x]))
+				os << char(177);
+#endif // _PRINT_WITH_EXIT
+			else
+				os << ' ';
+		}
+		os << std::endl;
+	}
+#ifndef _PRINT_WITHOUT_EXIT_
+	std::cout << std::endl << "Exit the labyrinth\n";
+	for (const auto& y : lab.path())
+	{
+		for (const auto& x : y)
+		{
+			if (x)
+				os << BLOCK;
+			else
+				os << ' ';
+		}
+		os << std::endl;
+	}
+#endif // !_PRINT_WITHOUT_EXIT_
+	return os;
 }
