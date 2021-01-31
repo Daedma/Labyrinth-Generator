@@ -1,6 +1,7 @@
 /*
 * Header containing Labyrinth generator
 * version 1.1.3
+* is no longer supported and will soon be removed from the repository
 * Author: Damir Hismatov
 * Github: https://github.com/Daedma
 */
@@ -38,13 +39,13 @@
 #define STEP 2//step
 
 /*
-* VERTICAL - means building a labyrinth with exits on the sides
-* HORIZONTAL - means building a labyrinth with exits from above and below
+* ver - means building a labyrinth with exits on the sides
+* hor - means building a labyrinth with exits from above and below
 */
-enum class Exist//parameters to pass to constructor and function regeneration
+enum class exist//parameters to pass to constructor and function regeneration
 {
-	VERTICAL, //exits on the sides
-	HORIZONTAL //exits from above and below
+	ver, //exits on the sides
+	hor //exits from above and below
 };
 
 //Class for random generation of labyrinth
@@ -53,26 +54,27 @@ class Labyrinth
 {
 	template<unsigned Width, unsigned Height, typename T>
 	using _2dArray = std::array<std::array<T, Height>, Width>;
-	struct Params{
+	struct Params
+	{
 		size_t max_branch, branch_rate, max_size;
 	} branch_param;//parameter pack of branches
 	_2dArray<H / 2 * 2, W / 2 * 2, bool> bBody;//main parameter describing the labyrinth
 	_2dArray<H / 2 * 2, W / 2 * 2, bool> escape;//exit map in a bool array perfomance
 	public:
-	Labyrinth(Exist ex = Exist::HORIZONTAL, size_t max_branch = 100, size_t branch_rate = 1000, size_t branch_size = 50) ://standart constructor
+	Labyrinth(exist ex = exist::hor, size_t max_branch = 100, size_t branch_rate = 1000, size_t branch_size = 50) ://standart constructor
 		branch_param { max_branch, branch_rate, branch_size }
 	{
-		build_frames();
+		reset();
 		build_path(ex);
 		build_subpath(ex);
 	}
-	void regenerate(Exist ex = Exist::HORIZONTAL);//generation new labyrinth with old pamametrs
-	void regenerate(Exist ex, size_t max_branch, size_t branch_rate, size_t branch_size)
+	void regenerate(exist ex = exist::hor);//generation new labyrinth with old pamametrs
+	void regenerate(exist ex, size_t max_branch, size_t branch_rate, size_t branch_size)
 	{
 		branch_param.max_branch = max_branch;
 		branch_param.branch_rate = branch_rate;
 		branch_param.max_size = branch_size;
-		build_frames();
+		reset();
 		build_path(ex);
 		build_subpath(ex);
 	}
@@ -84,21 +86,21 @@ class Labyrinth
 	{
 		return escape;
 	}
-	const bool& at(size_t X, size_t Y) const &
+	const bool& at(size_t X, size_t Y) const&
 	{
 		return bBody[Y][X];
 	}
-	bool& at(size_t X, size_t Y) &
+	bool& at(size_t X, size_t Y)&
 	{
 		return bBody[Y][X];
 	}
-	bool at(size_t X, size_t Y) &&
+	bool at(size_t X, size_t Y)&&
 	{
 		return bBody[Y][X];
 	}
 	private:
-	void build_path(Exist);
-	void build_frames();
+	void build_path(exist);
+	void reset();
 	auto init_map()
 	{
 		std::multimap<size_t, size_t> escape_map;
@@ -108,7 +110,7 @@ class Labyrinth
 					escape_map.insert(std::pair<const size_t, size_t>{y, x});
 		return escape_map;
 	}
-	void build_subpath(Exist ex)
+	void build_subpath(exist ex)
 	{
 		std::multimap<size_t, size_t> escape_map = init_map();
 		static std::default_random_engine e(static_cast<unsigned>(time(0)));
@@ -140,7 +142,7 @@ class Labyrinth
 		}
 #endif // !_FAST_BUILD_
 		//step 3 (final)
-		if (ex == Exist::HORIZONTAL)
+		if (ex == exist::hor)
 			for (size_t x = 3; x != bBody[0].size() - 3; ++x)
 			{
 				for (size_t y = 3; y != bBody.size() - 3; ++y)
@@ -159,7 +161,7 @@ class Labyrinth
 				}
 			}
 	}
-	std::pair<size_t, size_t> subpath(size_t x, size_t y, Exist ex)//for step 1
+	std::pair<size_t, size_t> subpath(size_t x, size_t y, exist ex)//for step 1
 	{
 		static std::default_random_engine e(static_cast<unsigned>(time(0)));
 		std::bernoulli_distribution d(0.5);
@@ -169,7 +171,7 @@ class Labyrinth
 		uint8_t status = 0;
 		bool flag = true;
 		int proc, delta;
-		if (ex == Exist::HORIZONTAL)
+		if (ex == exist::hor)
 		{
 			d_x.param(std::uniform_int_distribution<>::param_type { -1, 1 });
 			if (d(e))
@@ -275,7 +277,7 @@ class Labyrinth
 };
 
 template <unsigned W, unsigned H>
-void Labyrinth<W, H>::build_frames()
+void Labyrinth<W, H>::reset()
 {
 	for (auto& y : bBody)
 		for (auto& x : y)
@@ -286,7 +288,7 @@ void Labyrinth<W, H>::build_frames()
 }
 
 template <unsigned W, unsigned H>
-void Labyrinth<W, H>::build_path(Exist ex)
+void Labyrinth<W, H>::build_path(exist ex)
 {
 	static std::default_random_engine e(static_cast<unsigned>(time(0)));
 	std::uniform_int_distribution<> delta(-1, 1);
@@ -297,7 +299,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 	bool status;
 	int dy;//dy - delta y
 	int dx;//dx - delta x
-	if (ex == Exist::HORIZONTAL)
+	if (ex == exist::hor)
 	{
 		std::bernoulli_distribution cf(std::clamp(1.56 - pow(static_cast<double>(H) / W, COEFFICIENT), 0.1, 1.));//cf - curvature factor
 		while (flag)
@@ -386,7 +388,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 			}
 			else
 			{
-				build_frames();
+				reset();
 				counter = 0;
 			}
 		}
@@ -476,7 +478,7 @@ void Labyrinth<W, H>::build_path(Exist ex)
 			}
 			else
 			{
-				build_frames();
+				reset();
 				counter = 0;
 			}
 		}
@@ -485,9 +487,9 @@ void Labyrinth<W, H>::build_path(Exist ex)
 }
 
 template <unsigned W, unsigned H>
-void Labyrinth<W, H>::regenerate(Exist ex)
+void Labyrinth<W, H>::regenerate(exist ex)
 {
-	build_frames();
+	reset();
 	build_path(ex);
 	build_subpath(ex);
 }

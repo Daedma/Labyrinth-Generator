@@ -8,62 +8,69 @@
 #include <iosfwd>
 #include <map>
 #include <vector>
+#include <random>
+#include <string>
 
-#define BLOCK char(219)//aggregate for print walls of labyrinth
-#ifndef STATUS_CUP
-#define STATUS_CUP 5 
-/*Maximum amount of fails when generating subbranches
- *Recommended values STATUS_CUP >= 4
- *Affects the speed of construction
- */
-#endif // !STATUS_CUP
-
-#ifndef COEFFICIENT
-#define COEFFICIENT 0.25
- /*As you increase, the curvature of the exit path decreases.
-  *When decreasing, it increases.
-  *Increase if there are problems with build time.
-  */
-#endif // !COEFFICIENT
-
-  //Service
-  //Don't change this
-#define Y_LIMIT 1
-#define STEP 2//step
+#define WIDTH_LIMIT 16//smallest acceptable width
+#define HEIGHT_LIMIT 16//smallest acceptable height
 
 /*
-* VERTICAL - means building a labyrinth with exits on the sides
-* HORIZONTAL - means building a labyrinth with exits from above and below
+* format for a string describing the maze generation:
+* the middle three letters - the value exist (Labyrinth :: exist), can have the value hor or ver;
+* following the exist value, the unsigned number is the seed, read to point;
+* two numbers of unsigned type and separated by 'x' after the separating dot are
+* values for width and height, have values greater than WIDTH_LIMIT and HEIGHT_LIMIT, respectively.
+* =========================================
+* any deviation from the format throws an exception of type std :: invalid_argument,
+* in this case, the labyrinth will not be generated and have an undefined state (security guarantees for exceptions are not observed)
+* =========================================
+* Example: Labyrinth{"hor1234567890.1000x1000"} equal Labyrinth{Labyrinth::exist::hor, 1234567890, 1000, 1000}
 */
-enum class Exist//parameters to pass to constructor and function regeneration
-{
-    VERTICAL, //exits on the sides
-    HORIZONTAL //exits from above and below
-};
 
-class Labyrinth//Class for random generation of labyrinth
+/*
+* the width and height values may not match those provided by the user,
+* since there is getting rid of oddness downward
+* (that is, if the user provided an odd value for i, then the value i - 1 will be used)
+*/
+class Labyrinth final//Class for random generation of labyrinth
 {
-    template<typename T>
-    using _2dArray = std::vector<std::vector<T>>;
-    struct Params
+    public:
+
+    using seed_type = uint64_t;
+    /*
+    * ver - means building a labyrinth with exits on the sides
+    * hor - means building a labyrinth with exits from above and below
+    */
+    enum class exist//parameters to pass to constructor and function regeneration
     {
-        size_t max_branch, branch_rate, max_size;
-    } branch_param;//parameter pack
-    _2dArray<bool> bBody;//main parameter describing the labyrinth
-    _2dArray<bool> escape;//exit map in a bool array perfomance
-    size_t width, height;
-public:
-    Labyrinth(size_t = 100, size_t = 100, Exist = Exist::HORIZONTAL, size_t = 100, size_t = 1000, size_t = 50);
-    void regenerate(Exist ex = Exist::VERTICAL);//generation new labyrinth with old pamametrs
-    void regenerate(Exist, size_t, size_t, size_t = 100, size_t = 1000, size_t = 50);
-    const auto& get() const //returns an object in a std::vector<bool> performance
+        ver, //exits on the sides
+        hor //exits from above and below
+    };
+    Labyrinth(size_t, size_t, exist, size_t, size_t, size_t, seed_type = std::random_device {}());//full control over all parameters (not recommended)
+    Labyrinth(exist, seed_type, size_t, size_t);//exist, seed, width, height
+    Labyrinth(exist, size_t, size_t);//exist, width, height
+    explicit Labyrinth(const std::string&);//seed
+    const seed_type& regenerate();//generate new labyrinth with new seed and old width, height, exist
+    const seed_type& regenerate(const std::string&);//generate new labyrinth
+    const seed_type& regenerate(exist, seed_type, size_t, size_t);//generate new labyrinth
+    const seed_type& regenerate(exist, size_t, size_t);//generate new labyrinth
+    void regenerate(exist, size_t, size_t, size_t, size_t, size_t, seed_type = std::random_device {}());//full control over all parameters (not recommended)
+    const seed_type& seed() const//get seed
+    {
+        return gen_key;
+    }
+    void swap(Labyrinth&) noexcept;
+    const std::string seed_s() const;//get seed in string perfomance
+    const auto& get() const //returns an object in a two-dimensional std::vector<bool> performance
     {
         return bBody;
     }
-    const auto& path() const//return exit path in a std::vector<bool> performance
+    const auto& path() const//return exit path in a two-dimensional std::vector<bool> performance
     {
         return escape;
     }
+    const std::pair<size_t, size_t>  entry() const;//entry coordinates
+    const std::pair<size_t, size_t> exit() const;//exit coordinates
     const auto at(size_t X, size_t Y) const
     {
         return bBody.at(Y).at(X);
@@ -72,20 +79,42 @@ public:
     {
         return bBody.at(Y).at(X);
     }
-private:
-    void build_path(Exist);
-    void build_frames();
-    std::multimap<size_t, size_t> init_map();
-    void build_subpath(Exist);
-    std::pair<size_t, size_t> subpath(size_t, size_t, Exist);//for step 1
-    void subpath(size_t, size_t, size_t);
-    bool hor_check(size_t, size_t, short = 1) const;
-    bool ver_check(size_t, size_t, short = 1) const;
+
+    private:
+
+    template<typename T>
+    using _2dArray = std::vector<std::vector<T>>;
+    //members
+    struct
+    {
+        size_t max_branch, branch_rate, max_size;
+    } branch_param;//parameter pack // c-style be like ^^
+    size_t width, height;
+    _2dArray<bool> bBody;//main parameter describing the labyrinth
+    _2dArray<bool> escape;//exit map in a bool array perfomance
+    seed_type gen_key;//generation key
+    std::default_random_engine engine;//random engine
+    //functions
+    exist init(const std::string&);//initialization of labyrinth parameters via string
+    inline exist spot_ex() const;//spot labyrinth type (exist :: ver or exist :: hor)
+    void init_branch_param();//initializing branch_param based on width and height
+    std::multimap<size_t, size_t> init_map();//makes a map of the exit route
+    void reset();//resets path and maze to initial state (sets bits to escape and bBody to true)
+    void build_path(exist);//creates an exit path
+    void build_subpath(exist);//full filling of the labyrinth with branches
+    std::pair<size_t, size_t> subpath(int64_t, int64_t, exist);//for step 1 in building branches from path
+    void subpath(int64_t, int64_t, size_t);//for building branches
+    bool hor_check(size_t, size_t, size_t, short = 1) const;//function to check for cross paths when building along X-coordinate
+    bool ver_check(size_t, size_t, size_t, short = 1) const;//function to check for cross paths when building along Y-coordinate
+    bool h_impasse(size_t, size_t, size_t) const;//function to avoid "getting stuck" between two parallel paths when building a path along the X-coordinate
+    bool v_impasse(size_t, size_t, size_t) const;//function to avoid "getting stuck" between two parallel paths when building a path along the Y-coordinate
 };
+
+void swap(Labyrinth&, Labyrinth&) noexcept;
 
 /*
 * default displays Labyrinth and path separately
-* use macros _PRINT_WITHOUT_EXIT_ , if you want print labyrinth without exit path separately
-* use macros _PRINT_WITH_EXIT_ , if you want highlight exit inside labyrinth
+* use macros _PRINT_WITHOUT_EXIT_ , if you want print labyrinth without exit path separately (not working)
+* use macros _PRINT_WITH_EXIT_ , if you want highlight exit inside labyrinth (not working)
 */
 std::ostream& operator<<(std::ostream&, const Labyrinth&);
