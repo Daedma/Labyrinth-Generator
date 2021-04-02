@@ -1,4 +1,4 @@
-#include "Vector_version\\Labyrinth.hpp"
+#include "../Vector_version/Labyrinth.hpp"
 #include <cassert>
 #include <memory>
 #include <iomanip>

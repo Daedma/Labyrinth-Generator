@@ -607,7 +607,8 @@ std::ostream& operator<<(std::ostream& os, const Labyrinth& lab)
                 os << char(177);
 #endif // _PRINT_WITH_EXIT
             else
-                os << ' ';
+                //os << ' ';
+                os << char(177);
         }
         os << std::endl;
     }

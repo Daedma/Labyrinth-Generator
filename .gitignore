@@ -4,4 +4,6 @@ out/
 
 *.exe
 
-*.txt
+lab.txt
+
+Vector_version/lab.txt

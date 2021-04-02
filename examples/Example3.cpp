@@ -1,4 +1,4 @@
-#include "Vector_version\\Labyrinth.hpp"
+#include "../Vector_version/Labyrinth.hpp"
 #include <cassert>
 #include <memory>
 #include <iomanip>
@@ -8,11 +8,11 @@
 
 int main()
 {
-    std::cout << "Labirint generator" << std::setw(13) << " 2.0.0\n" << std::endl;
+    std::cout << "Labirint generator" << std::setw(13) << " 2.2.0\n" << std::endl;
     std::cout << "2020" << std::setw(40) << " Damir Hismatov(c)\n\n";
     std::cout << "Example code #3 of vector version without template" << std::endl;
     std::string params;
-    //while (true)
+    while (true)
     {
         std::cout << "\n\nPlease, enter parameters to generate the labyrinth or press [CTRL]+[C] to exit...\n seed: ";
         std::cin >> params;

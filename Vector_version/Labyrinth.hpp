@@ -1,6 +1,6 @@
 /*
 * Header containing Labyrinth generator(vector version)
-* version 2.0.0
+* version 2.2.0
 * Author: Damir Hismatov
 * Github: https://github.com/Daedma
 */
@@ -34,7 +34,7 @@
 */
 class Labyrinth final//Class for random generation of labyrinth
 {
-    public:
+public:
 
     using seed_type = uint64_t;
     /*
@@ -80,7 +80,7 @@ class Labyrinth final//Class for random generation of labyrinth
         return bBody.at(Y).at(X);
     }
 
-    private:
+private:
 
     template<typename T>
     using _2dArray = std::vector<std::vector<T>>;

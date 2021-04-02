@@ -1,6 +1,6 @@
 #define _PRINT_WITHOUT_EXIT_
 #define _PRINT_WITH_EXIT_
-#include "Labyrinth.h"
+#include "../Labyrinth.h"
 #include <cassert>
 #include <memory>
 #include <iomanip>
