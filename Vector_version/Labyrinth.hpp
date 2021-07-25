@@ -1,6 +1,6 @@
 /*
 * Header containing Labyrinth generator(vector version)
-* version 2.2.0
+* version 2.2.1
 * Author: Damir Hismatov
 * Github: https://github.com/Daedma
 */
@@ -29,8 +29,8 @@
 
 /*
 * the width and height values may not match those provided by the user,
-* since there is getting rid of oddness downward
-* (that is, if the user provided an odd value for i, then the value i - 1 will be used)
+* since there is getting rid of parity upward
+* (that is, if the user provided an even value for i, then the value i + 1 will be used)
 */
 class Labyrinth final//Class for random generation of labyrinth
 {

@@ -19,7 +19,7 @@ void labyrinth_test(size_t _Step, size_t _Threads, range _Range, std::string _Fi
     std::vector<size_t> step_values;
     for (auto i = 0; i != _Threads; ++i)
     {
-        step_values.push_back(_Step * (i + 1));
+        step_values.push_back(_Range.from + (_Step * i));
     }
     _Step *= _Threads;
 

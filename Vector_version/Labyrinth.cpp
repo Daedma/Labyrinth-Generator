@@ -36,8 +36,8 @@
 #define STEP 2//step
 
 Labyrinth::Labyrinth(size_t _width, size_t _height, exist ex, size_t max_branch, size_t branch_rate, size_t branch_size, Labyrinth::seed_type _Seed) :
-    branch_param { max_branch, branch_rate, branch_size }, width { _width / 2 * 2 }, height { _height / 2 * 2 },
-    bBody(_height / 2 * 2, std::vector<bool>(_width / 2 * 2, true)), escape(_height / 2 * 2, std::vector<bool>(_width / 2 * 2, true)), gen_key(_Seed), engine(_Seed)
+    branch_param { max_branch, branch_rate, branch_size }, width { _width / 2 * 2 + 1 }, height { _height / 2 * 2 + 1 },
+    bBody(_height / 2 * 2 + 1, std::vector<bool>(_width / 2 * 2 + 1, true)), escape(_height / 2 * 2 + 1, std::vector<bool>(_width / 2 * 2 + 1, true)), gen_key(_Seed), engine(_Seed)
 {
     if (width < WIDTH_LIMIT || height < HEIGHT_LIMIT) throw std::invalid_argument("the size is too small");
     build_path(ex);
@@ -45,7 +45,7 @@ Labyrinth::Labyrinth(size_t _width, size_t _height, exist ex, size_t max_branch,
 }
 
 Labyrinth::Labyrinth(exist _Ex, seed_type _Seed, size_t _Width, size_t _Height) :
-    width(_Width / 2 * 2), height(_Height / 2 * 2), gen_key(_Seed), engine(_Seed), bBody(height, std::vector<bool>(width, true)),
+    width(_Width / 2 * 2 + 1), height(_Height / 2 * 2 + 1), gen_key(_Seed), engine(_Seed), bBody(height, std::vector<bool>(width, true)),
     escape(height, std::vector<bool>(width, true))
 {
     init_branch_param();
@@ -55,7 +55,7 @@ Labyrinth::Labyrinth(exist _Ex, seed_type _Seed, size_t _Width, size_t _Height) 
 }
 
 Labyrinth::Labyrinth(exist _Ex, size_t _Width, size_t _Height) :
-    width(_Width / 2 * 2), height(_Height / 2 * 2), gen_key(std::random_device {}()), engine(gen_key), bBody(height, std::vector<bool>(width, true)),
+    width(_Width / 2 * 2 + 1), height(_Height / 2 * 2 + 1), gen_key(std::random_device {}()), engine(gen_key), bBody(height, std::vector<bool>(width, true)),
     escape(height, std::vector<bool>(width, true))
 {
     init_branch_param();
@@ -98,8 +98,8 @@ const Labyrinth::seed_type& Labyrinth::regenerate(const std::string& _Seed)
 const Labyrinth::seed_type& Labyrinth::regenerate(exist _Ex, seed_type _Seed, size_t _Width, size_t _Height)
 {
     gen_key = _Seed;
-    width = _Width / 2 * 2;
-    height = _Height / 2 * 2;
+    width = _Width / 2 * 2 + 1;
+    height = _Height / 2 * 2 + 1;
     if (width < WIDTH_LIMIT || height < HEIGHT_LIMIT) throw std::invalid_argument("the size is too small");
     engine.seed(gen_key);
     bBody.resize(height, std::vector<bool>(width, true));
@@ -115,8 +115,8 @@ const Labyrinth::seed_type& Labyrinth::regenerate(exist _Ex, size_t _Width, size
 {
     reset();
     gen_key = std::random_device {}();
-    width = _Width / 2 * 2;
-    height = _Height / 2 * 2;
+    width = _Width / 2 * 2 + 1;
+    height = _Height / 2 * 2 + 1;
     if (width < WIDTH_LIMIT || height < HEIGHT_LIMIT) throw std::invalid_argument("the size is too small");
     engine.seed(gen_key);
     bBody.resize(height, std::vector<bool>(width, true));
@@ -148,9 +148,9 @@ const std::string Labyrinth::seed_s() const
 const std::pair<size_t, size_t> Labyrinth::entry() const
 {
     if (spot_ex() == exist::hor)
-        return { 0ULL, static_cast<size_t>(((height / 2) % 2) ? height / 2 + 1 : height / 2) };//x,y
+        return { 0ULL, static_cast<size_t>(((height / 2) % 2) ? height / 2 : height / 2 + 1) };//x,y
     else
-        return { static_cast<size_t>(((width / 2) % 2) ? width / 2 + 1 : width / 2), 0ULL };
+        return { static_cast<size_t>(((width / 2) % 2) ? width / 2 : width / 2 + 1), 0ULL };
 }
 
 const std::pair<size_t, size_t> Labyrinth::exit() const
@@ -195,12 +195,12 @@ Labyrinth::exist Labyrinth::init(const std::string& str)
     ss.str(str.substr(point + 1, x_delimiter));
     if (!(ss >> width))
         throw std::invalid_argument("format not respected");
-    width = width / 2 * 2;
+    width = width / 2 * 2 + 1;
 
     ss.str(str.substr(x_delimiter + 1));
     if (!(ss >> height))
         throw std::invalid_argument("format not respected");
-    height = height / 2 * 2;
+    height = height / 2 * 2 + 1;
 
     engine.seed(gen_key);
     bBody.resize(height, std::vector<bool>(width, true));
@@ -225,7 +225,7 @@ std::multimap<size_t, size_t> Labyrinth::init_map()
 
 Labyrinth::exist Labyrinth::spot_ex() const
 {
-    if (!bBody[(((height / 2) % 2) ? height / 2 + 1 : height / 2)][0])
+    if (!bBody[(((height / 2) % 2) ? height / 2 : height / 2 + 1)][0])
         return exist::hor;
     else
         return exist::ver;
@@ -243,7 +243,7 @@ void Labyrinth::build_subpath(exist ex)
     //step 1
     for (auto& i : sample_map)
     {
-        if (i.second % 2 == 0 && i.first % 2 == 0 && ber(engine))
+        if (i.second % 2 == 1 && i.first % 2 == 1 && ber(engine))
         {
 #ifdef _FAST_BUILD_
             subpath(i.second, i.first, 0, sqrt(branch_param.max_size));
@@ -267,7 +267,7 @@ void Labyrinth::build_subpath(exist ex)
         {
             for (size_t y = 1; y != height - 1; ++y)
             {
-                if (!bBody[y][x] && ber(engine) && x % 2 == 0 && y % 2 == 0)
+                if (!bBody[y][x] && ber(engine) && x % 2 == 1 && y % 2 == 1)
                     subpath(x, y, branch_param.max_branch);
             }
         }
@@ -276,7 +276,7 @@ void Labyrinth::build_subpath(exist ex)
         {
             for (size_t x = 1; x != width - 1; ++x)
             {
-                if (!bBody[y][x] && ber(engine) && x % 2 == 0 && y % 2 == 0)
+                if (!bBody[y][x] && ber(engine) && x % 2 == 1 && y % 2 == 1)
                     subpath(x, y, branch_param.max_branch);
             }
         }
@@ -434,11 +434,10 @@ void Labyrinth::build_path(exist ex)
     {
         std::bernoulli_distribution cf(std::clamp(1.56 - pow(static_cast<double>(height) / width, COEFFICIENT), 0.1, 1.));//cf - curvature factor
         int64_t max_x = 0;
-        x = 0, y = ((height / 2) % 2) ? height / 2 + 1 : height / 2;
-        escape[y][x + 1] = bBody[y][x + 1] = escape[y][x] = bBody[y][x] =
-            escape[y][x + 2] = bBody[y][x + 2] = false;
-        x += 2;
-        while (x < width - 2)
+        x = 0, y = ((height / 2) % 2) ? height / 2 : height / 2 + 1;
+        escape[y][x + 1] = bBody[y][x + 1] = escape[y][x] = bBody[y][x] = false;
+        x += 1;
+        while (x < width - 3)
         {
             no_impasse = true;
             status = proc(engine);
@@ -506,11 +505,10 @@ void Labyrinth::build_path(exist ex)
     {
         std::bernoulli_distribution cf(std::clamp(1.56 - pow(static_cast<double>(width) / height, COEFFICIENT), 0.1, 1.));
         int64_t max_y = 0;
-        x = ((width / 2) % 2) ? width / 2 + 1 : width / 2, y = 0;
-        escape[y + 1][x] = bBody[y + 1][x] = escape[y][x] = bBody[y][x] =
-            escape[y + 2][x] = bBody[y + 2][x] = false;
-        y += 2;
-        while (y < height - 2)
+        x = ((width / 2) % 2) ? width / 2 : width / 2 + 1, y = 0;
+        escape[y + 1][x] = bBody[y + 1][x] = escape[y][x] = bBody[y][x] = false;
+        y += 1;
+        while (y < height - 3)
         {
             no_impasse = true;
             status = proc(engine);
