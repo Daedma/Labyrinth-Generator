@@ -1,5 +1,5 @@
 /*
-* Header containing Labyrinth generator(vector version)
+* Header containing Labyrinth generator
 * version 2.2.1
 * Author: Damir Hismatov
 * Github: https://github.com/Daedma
@@ -11,8 +11,8 @@
 #include <random>
 #include <string>
 
-#define WIDTH_LIMIT 16//smallest acceptable width
-#define HEIGHT_LIMIT 16//smallest acceptable height
+#define WIDTH_LIMIT 15ULL//smallest acceptable width
+#define HEIGHT_LIMIT 15ULL//smallest acceptable height
 
 /*
 * format for a string describing the maze generation:
@@ -46,6 +46,7 @@ public:
         ver, //exits on the sides
         hor //exits from above and below
     };
+    //TODO: You can do without exception. Call _2dArray::shrink_to_fit() function.
     Labyrinth(size_t, size_t, exist, size_t, size_t, size_t, seed_type = std::random_device {}());//full control over all parameters (not recommended)
     Labyrinth(exist, seed_type, size_t, size_t);//exist, seed, width, height
     Labyrinth(exist, size_t, size_t);//exist, width, height
@@ -61,10 +62,12 @@ public:
     }
     void swap(Labyrinth&) noexcept;
     const std::string seed_s() const;//get seed in string perfomance
+    //TODO: delete get() function
     const auto& get() const //returns an object in a two-dimensional std::vector<bool> performance
     {
         return bBody;
     }
+    //TODO: make bool function for access to path
     const auto& path() const//return exit path in a two-dimensional std::vector<bool> performance
     {
         return escape;
@@ -100,6 +103,7 @@ private:
     void init_branch_param();//initializing branch_param based on width and height
     std::multimap<size_t, size_t> init_map();//makes a map of the exit route
     void reset();//resets path and maze to initial state (sets bits to escape and bBody to true)
+    void shrink();
     void build_path(exist);//creates an exit path
     void build_subpath(exist);//full filling of the labyrinth with branches
     std::pair<size_t, size_t> subpath(int64_t, int64_t, exist);//for step 1 in building branches from path
@@ -112,9 +116,10 @@ private:
 
 void swap(Labyrinth&, Labyrinth&) noexcept;
 
+//TODO: edit print with new geters
 /*
 * default displays Labyrinth and path separately
-* use macros _PRINT_WITHOUT_EXIT_ , if you want print labyrinth without exit path separately (not working)
-* use macros _PRINT_WITH_EXIT_ , if you want highlight exit inside labyrinth (not working)
+* use macros _PRINT_WITHOUT_EXIT_ , if you want print labyrinth without exit path separately
+* use macros _PRINT_WITH_EXIT_ , if you want highlight exit inside labyrinth
 */
 std::ostream& operator<<(std::ostream&, const Labyrinth&);
