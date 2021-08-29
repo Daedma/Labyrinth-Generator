@@ -1,6 +1,6 @@
 #include "testing_tools/testing_tools.hpp"
 #include "lab_test.hpp"
-#include "../Vector_version/Labyrinth.hpp"
+#include "../Labyrinth.hpp"
 #include <vector>
 #include <thread>
 #include <map>
@@ -24,7 +24,7 @@ void labyrinth_test(size_t _Step, size_t _Threads, range _Range, std::string _Fi
     _Step *= _Threads;
 
     auto lab_construct = [](size_t szLab){
-        return test::time_for_construct<Labyrinth>(Labyrinth::exist::hor, szLab, szLab);
+        return test::time_for_construct<Labyrinth>(Labyrinth::exits::hor, szLab, szLab);
     };
 
     auto bench = [_File, lab_construct, &results, &map_mut](size_t szLab){

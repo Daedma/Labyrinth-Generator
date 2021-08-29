@@ -35,7 +35,7 @@
 #define Y_LIMIT 1
 #define STEP 2//step
 
-Labyrinth::Labyrinth(size_t _width, size_t _height, exist ex, size_t max_branch, size_t branch_rate, size_t branch_size, Labyrinth::seed_type _Seed) :
+Labyrinth::Labyrinth(size_t _width, size_t _height, exits ex, size_t max_branch, size_t branch_rate, size_t branch_size, Labyrinth::seed_type _Seed) :
     branch_param { max_branch, branch_rate, branch_size }, width { (_width / 2 * 2 + 1) < WIDTH_LIMIT ? WIDTH_LIMIT : _width / 2 * 2 + 1 }, height { (_height / 2 * 2 + 1) < HEIGHT_LIMIT ? HEIGHT_LIMIT : _height / 2 * 2 + 1 },
     bBody(height, std::vector<bool>(width, true)), escape(height, std::vector<bool>(width, true)), gen_key(_Seed), engine(_Seed)
 {
@@ -44,7 +44,7 @@ Labyrinth::Labyrinth(size_t _width, size_t _height, exist ex, size_t max_branch,
     build_subpath(ex);
 }
 
-Labyrinth::Labyrinth(exist _Ex, seed_type _Seed, size_t _Width, size_t _Height) :
+Labyrinth::Labyrinth(exits _Ex, seed_type _Seed, size_t _Width, size_t _Height) :
     width((_Width / 2 * 2 + 1) < WIDTH_LIMIT ? WIDTH_LIMIT : _Width / 2 * 2 + 1), height((_Height / 2 * 2 + 1) < HEIGHT_LIMIT ? HEIGHT_LIMIT : _Height / 2 * 2 + 1), gen_key(_Seed), engine(_Seed), bBody(height, std::vector<bool>(width, true)),
     escape(height, std::vector<bool>(width, true))
 {
@@ -54,7 +54,7 @@ Labyrinth::Labyrinth(exist _Ex, seed_type _Seed, size_t _Width, size_t _Height) 
     build_subpath(_Ex);
 }
 
-Labyrinth::Labyrinth(exist _Ex, size_t _Width, size_t _Height) :
+Labyrinth::Labyrinth(exits _Ex, size_t _Width, size_t _Height) :
     width((_Width / 2 * 2 + 1) < WIDTH_LIMIT ? WIDTH_LIMIT : _Width / 2 * 2 + 1), height((_Height / 2 * 2 + 1) < HEIGHT_LIMIT ? HEIGHT_LIMIT : _Height / 2 * 2 + 1), gen_key(std::random_device {}()), engine(gen_key), bBody(height, std::vector<bool>(width, true)),
     escape(height, std::vector<bool>(width, true))
 {
@@ -66,7 +66,7 @@ Labyrinth::Labyrinth(exist _Ex, size_t _Width, size_t _Height) :
 
 Labyrinth::Labyrinth(const std::string& _Seed)
 {
-    exist ex = init(_Seed);
+    exits ex = init(_Seed);
     init_branch_param();
     build_path(ex);
     build_subpath(ex);
@@ -76,7 +76,7 @@ const Labyrinth::seed_type& Labyrinth::regenerate()
 {
     gen_key = std::random_device {}();
     engine.seed(gen_key);
-    exist ex = spot_ex();
+    exits ex = spot_ex();
     reset();
     build_path(ex);
     build_subpath(ex);
@@ -85,14 +85,14 @@ const Labyrinth::seed_type& Labyrinth::regenerate()
 
 const Labyrinth::seed_type& Labyrinth::regenerate(const std::string& _Seed)
 {
-    exist ex = init(_Seed);
+    exits ex = init(_Seed);
     init_branch_param();
     build_path(ex);
     build_subpath(ex);
     return gen_key;
 }
 
-const Labyrinth::seed_type& Labyrinth::regenerate(exist _Ex, seed_type _Seed, size_t _Width, size_t _Height)
+const Labyrinth::seed_type& Labyrinth::regenerate(exits _Ex, seed_type _Seed, size_t _Width, size_t _Height)
 {
     gen_key = _Seed;
     width = (_Width / 2 * 2 + 1) < WIDTH_LIMIT ? WIDTH_LIMIT : _Width / 2 * 2 + 1;
@@ -109,7 +109,7 @@ const Labyrinth::seed_type& Labyrinth::regenerate(exist _Ex, seed_type _Seed, si
     return gen_key;
 }
 
-const Labyrinth::seed_type& Labyrinth::regenerate(exist _Ex, size_t _Width, size_t _Height)
+const Labyrinth::seed_type& Labyrinth::regenerate(exits _Ex, size_t _Width, size_t _Height)
 {
     gen_key = std::random_device {}();
     width = (_Width / 2 * 2 + 1) < WIDTH_LIMIT ? WIDTH_LIMIT : _Width / 2 * 2 + 1;
@@ -134,9 +134,9 @@ void Labyrinth::swap(Labyrinth& rhs) noexcept
 
 const std::string Labyrinth::seed_s() const
 {
-    exist ex = spot_ex();
+    exits ex = spot_ex();
     std::ostringstream oss;
-    if (ex == exist::hor)
+    if (ex == exits::hor)
         oss << "hor";
     else
         oss << "ver";
@@ -146,7 +146,7 @@ const std::string Labyrinth::seed_s() const
 
 const std::pair<size_t, size_t> Labyrinth::entry() const
 {
-    if (spot_ex() == exist::hor)
+    if (spot_ex() == exits::hor)
         return { 0ULL, static_cast<size_t>(((height / 2) % 2) ? height / 2 : height / 2 + 1) };//x,y
     else
         return { static_cast<size_t>(((width / 2) % 2) ? width / 2 : width / 2 + 1), 0ULL };
@@ -154,7 +154,7 @@ const std::pair<size_t, size_t> Labyrinth::entry() const
 
 const std::pair<size_t, size_t> Labyrinth::exit() const
 {
-    if (spot_ex() == exist::hor)
+    if (spot_ex() == exits::hor)
     {
         for (size_t y = 0; y != height; ++y)
             if (!escape[y][width - 1])
@@ -169,15 +169,15 @@ const std::pair<size_t, size_t> Labyrinth::exit() const
     return{ 0ULL, 0ULL };
 }
 
-Labyrinth::exist Labyrinth::init(const std::string& str)
+Labyrinth::exits Labyrinth::init(const std::string& str)
 {
-    exist ex;
+    exits ex;
     if (str.substr(0, 3) == "hor")
-        ex = exist::hor;
+        ex = exits::hor;
     else if (str.substr(0, 3) == "ver")
-        ex = exist::ver;
+        ex = exits::ver;
     else
-        throw std::invalid_argument { "unexpected exist type" };
+        throw std::invalid_argument { "unexpected exits type" };
 
     size_t point = str.find('.');
     if (point == std::string::npos)
@@ -235,15 +235,15 @@ std::multimap<size_t, size_t> Labyrinth::init_map()
     return escape_map;
 }
 
-Labyrinth::exist Labyrinth::spot_ex() const
+Labyrinth::exits Labyrinth::spot_ex() const
 {
     if (!bBody[(((height / 2) % 2) ? height / 2 : height / 2 + 1)][0])
-        return exist::hor;
+        return exits::hor;
     else
-        return exist::ver;
+        return exits::ver;
 }
 
-void Labyrinth::build_subpath(exist ex)
+void Labyrinth::build_subpath(exits ex)
 {
     std::multimap<size_t, size_t> escape_map = init_map();
     std::bernoulli_distribution ber(branch_param.branch_rate / 1000.);
@@ -274,7 +274,7 @@ void Labyrinth::build_subpath(exist ex)
     }
 #endif // !_FAST_BUILD_
     //step 3 (final)
-    if (ex == exist::hor)
+    if (ex == exits::hor)
         for (size_t x = 1; x != width - 1; ++x)
         {
             for (size_t y = 1; y != height - 1; ++y)
@@ -294,7 +294,7 @@ void Labyrinth::build_subpath(exist ex)
         }
 }
 
-std::pair<size_t, size_t> Labyrinth::subpath(int64_t x, int64_t y, exist ex)
+std::pair<size_t, size_t> Labyrinth::subpath(int64_t x, int64_t y, exits ex)
 {
     std::bernoulli_distribution d(0.5);
     std::uniform_int_distribution<> d_x;
@@ -303,7 +303,7 @@ std::pair<size_t, size_t> Labyrinth::subpath(int64_t x, int64_t y, exist ex)
     uint8_t status = 0;
     bool flag = true;
     int dx, dy;
-    if (ex == exist::hor)
+    if (ex == exits::hor)
     {
         d_x.param(std::uniform_int_distribution<>::param_type { -1, 1 });
         if (d(engine))
@@ -433,7 +433,7 @@ void Labyrinth::reset()
             x = true;
 }
 
-void Labyrinth::build_path(exist ex)
+void Labyrinth::build_path(exits ex)
 {
     std::uniform_int_distribution<> delta(-1, 1);
     std::bernoulli_distribution proc(PROC_COEFF);
@@ -442,7 +442,7 @@ void Labyrinth::build_path(exist ex)
     int dy;//dy - delta y
     int dx;//dx - delta x
     bool no_impasse = true;
-    if (ex == exist::hor)
+    if (ex == exits::hor)
     {
         std::bernoulli_distribution cf(std::clamp(1.56 - pow(static_cast<double>(height) / width, COEFFICIENT), 0.1, 1.));//cf - curvature factor
         int64_t max_x = 0;
@@ -586,7 +586,7 @@ void Labyrinth::build_path(exist ex)
     }
 }
 
-void Labyrinth::regenerate(exist ex, size_t _width, size_t _height, size_t max_branch, size_t branch_rate, size_t branch_size, Labyrinth::seed_type _Seed)
+void Labyrinth::regenerate(exits ex, size_t _width, size_t _height, size_t max_branch, size_t branch_rate, size_t branch_size, Labyrinth::seed_type _Seed)
 {
     gen_key = _Seed;
     width = _width;
@@ -600,55 +600,42 @@ void Labyrinth::regenerate(exist ex, size_t _width, size_t _height, size_t max_b
     bBody.resize(height, std::vector<bool>(width, true));
     escape.resize(height, std::vector<bool>(width, true));
     shrink();
-    build_path(_Ex);
-    build_subpath(_Ex);
+    build_path(ex);
+    build_subpath(ex);
+}
 
-    void Labyrinth::shrink()
-    {
-        bBody.shrink_to_fit();
-        for (auto& i : bBody)
-            i.shrink_to_fit();
-        escape.shrink_to_fit();
-        for (auto& i : escape)
-            i.shrink_to_fit();
-    }
+void Labyrinth::shrink()
+{
+    bBody.shrink_to_fit();
+    for (auto& i : bBody)
+        i.shrink_to_fit();
+    escape.shrink_to_fit();
+    for (auto& i : escape)
+        i.shrink_to_fit();
+}
 
-    void swap(Labyrinth & lhs, Labyrinth & rhs) noexcept
-    {
-        lhs.swap(rhs);
-    }
+void swap(Labyrinth& lhs, Labyrinth& rhs) noexcept
+{
+    lhs.swap(rhs);
+}
 
-    std::ostream& operator<<(std::ostream & os, const Labyrinth & lab)
+std::ostream& operator<<(std::ostream& os, const Labyrinth& lab)
+{
+    for (auto y = 0; y != lab.get().size(); ++y)
     {
-        for (auto y = 0; y != lab.get().size(); ++y)
+        for (auto x = 0; x != lab.get()[y].size(); ++x)
         {
-            for (auto x = 0; x != lab.get()[y].size(); ++x)
-            {
-                if (lab.get()[y][x])
-                    os << BLOCK;
+            if (lab.at(x, y))
+                os << BLOCK;
 #ifdef _PRINT_WITH_EXIT_
-                else if (!(lab.path()[y][x]))
-                    os << char(177);
+            else if (lab.is_path(x, y))
+                os << char(177);
 #endif // _PRINT_WITH_EXIT
-                else
-                    //os << ' ';
-                    os << char(177);
-            }
-            os << std::endl;
+            else
+                //os << ' ';
+                os << char(176);
         }
-#ifndef _PRINT_WITHOUT_EXIT_
-        std::cout << std::endl << "Exit the labyrinth\n";
-        for (const auto& y : lab.path())
-        {
-            for (const auto& x : y)
-            {
-                if (x)
-                    os << BLOCK;
-                else
-                    os << ' ';
-            }
-            os << std::endl;
-        }
-#endif // !_PRINT_WITHOUT_EXIT_
-        return os;
+        os << std::endl;
     }
+    return os;
+}

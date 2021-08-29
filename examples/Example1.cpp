@@ -1,4 +1,4 @@
-#include "../Vector_version/Labyrinth.hpp"
+#include "../Labyrinth.hpp"
 #include <cassert>
 #include <memory>
 #include <iomanip>
@@ -15,7 +15,7 @@ int main()
     int ex;
     //while (true)
     {
-        std::cout << "\n\nPlease, enter parameters to generate the labyrinth or press [CTRL]+[C] to exit...\n exist(0 - vertical, 1 - horizontal\n or -1, if you want use default parameters): ";
+        std::cout << "\n\nPlease, enter parameters to generate the labyrinth or press [CTRL]+[C] to exit...\n exits(0 - vertical, 1 - horizontal\n or -1, if you want use default parameters): ";
         std::cin >> ex;
         assert(ex <= 1);
         if (ex == -1)
@@ -42,7 +42,7 @@ int main()
             std::cin >> lnbranch;
         }
         std::cout << " Labyrinth in progress...";
-        Labyrinth lab(width, height, static_cast<Labyrinth::exist>(ex), qtsubranch, branchiness, lnbranch);
+        Labyrinth lab(width, height, static_cast<Labyrinth::exits>(ex), qtsubranch, branchiness, lnbranch);
         std::cout << "\n Labyrinth generated:\n";
         std::cout << lab << std::endl;
 
