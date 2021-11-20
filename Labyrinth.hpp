@@ -32,6 +32,7 @@
 * since there is getting rid of parity upward
 * (that is, if the user provided an even value for i, then the value i + 1 will be used)
 */
+//TODO: сделать итераторы
 class Labyrinth final//Class for random generation of labyrinth
 {
 public:
@@ -45,6 +46,11 @@ public:
     {
         ver, //exits on the sides
         hor //exits from above and below
+    };
+    enum class objects : bool
+    {
+        pass = false,
+        wall = true
     };
     Labyrinth(size_t, size_t, exits, size_t, size_t, size_t, seed_type = std::random_device {}());//full control over all parameters (not recommended)
     Labyrinth(exits, seed_type, size_t, size_t);//exits, seed, width, height
@@ -66,24 +72,19 @@ public:
     {
         return bBody;
     }
-    //TODO: make bool function for access to path
     const auto& path() const//return exit path in a two-dimensional std::vector<bool> performance
     {
         return escape;
     }
-    bool is_path(size_t X, size_t Y) const
+    bool is_path(size_t nRow, size_t nColumn) const
     {
-        return !escape[Y][X];
+        return !escape.at(nRow).at(nColumn);
     }
     const std::pair<size_t, size_t>  entry() const;//entry coordinates
     const std::pair<size_t, size_t> exit() const;//exit coordinates
-    const auto at(size_t X, size_t Y) const
+    objects at(size_t nRow, size_t nColumn) const
     {
-        return bBody.at(Y).at(X);
-    }
-    auto at(size_t X, size_t Y)
-    {
-        return bBody.at(Y).at(X);
+        return static_cast<objects>(bBody.at(nRow).at(nColumn));
     }
     auto size_x() const { return width; }
     auto size_y() const { return height; }
@@ -117,6 +118,7 @@ private:
     bool ver_check(size_t, size_t, size_t, short = 1) const;//function to check for cross paths when building along Y-coordinate
     bool h_impasse(size_t, size_t, size_t) const;//function to avoid "getting stuck" between two parallel paths when building a path along the X-coordinate
     bool v_impasse(size_t, size_t, size_t) const;//function to avoid "getting stuck" between two parallel paths when building a path along the Y-coordinate
+    void resize(size_t, size_t);
 };
 
 void swap(Labyrinth&, Labyrinth&) noexcept;
