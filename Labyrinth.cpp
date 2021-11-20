@@ -123,7 +123,7 @@ const std::string Labyrinth::seed_s() const
     return oss.str();
 }
 
-const std::pair<size_t, size_t> Labyrinth::entry() const
+std::pair<size_t, size_t> Labyrinth::entry() const
 {
     if (spot_ex() == exits::hor)
         return { static_cast<size_t>(((height / 2) % 2) ? height / 2 : height / 2 + 1), 0 };//x,y
@@ -131,7 +131,7 @@ const std::pair<size_t, size_t> Labyrinth::entry() const
         return { 0, static_cast<size_t>(((width / 2) % 2) ? width / 2 : width / 2 + 1) };
 }
 
-const std::pair<size_t, size_t> Labyrinth::exit() const
+std::pair<size_t, size_t> Labyrinth::exit() const
 {
     if (spot_ex() == exits::hor)
     {
@@ -561,29 +561,13 @@ void Labyrinth::build_path(exits ex)
 void Labyrinth::regenerate(exits ex, size_t _width, size_t _height, size_t max_branch, size_t branch_rate, size_t branch_size, Labyrinth::seed_type _Seed)
 {
     gen_key = _Seed;
-    width = _width;
-    height = _height;
     branch_param.max_branch = max_branch;
     branch_param.branch_rate = branch_rate;
     branch_param.max_size = branch_size;
     engine.seed(gen_key);
-    bBody.clear();
-    escape.clear();
-    bBody.resize(height, std::vector<bool>(width, true));
-    escape.resize(height, std::vector<bool>(width, true));
-    shrink();
+    resize(_width, _height);
     build_path(ex);
     build_subpath(ex);
-}
-
-void Labyrinth::shrink()
-{
-    bBody.shrink_to_fit();
-    for (auto& i : bBody)
-        i.shrink_to_fit();
-    escape.shrink_to_fit();
-    for (auto& i : escape)
-        i.shrink_to_fit();
 }
 
 void swap(Labyrinth& lhs, Labyrinth& rhs) noexcept
@@ -593,9 +577,9 @@ void swap(Labyrinth& lhs, Labyrinth& rhs) noexcept
 
 std::ostream& operator<<(std::ostream& os, const Labyrinth& lab)
 {
-    for (auto y = 0; y != lab.size_y(); ++y)
+    for (auto y = 0; y != lab.size().first; ++y)
     {
-        for (auto x = 0; x != lab.size_x(); ++x)
+        for (auto x = 0; x != lab.size().second; ++x)
         {
             if (lab.at(y, x) == Labyrinth::objects::wall)
                 os << BLOCK;

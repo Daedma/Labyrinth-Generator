@@ -21,7 +21,7 @@ int main(int argv, char** argc)
         std::cout << " Labyrinth in progress...";
         Labyrinth lab(static_cast<Labyrinth::exits>(ex), width, height);
         std::cout << "\n Labyrinth generated:\n";
-        //std::cout << lab << std::endl;
+        std::cout << lab << std::endl;
         std::cout << "Seed: " << lab.seed() << std::endl;
         return 0;
     }
